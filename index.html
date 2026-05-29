@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Health Tracker</title>
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <h1>Health Tracker</h1>
+
+    <section>
+        <h3>Water Counter</h3>
+        <p>Glasses drunk: <span id="count">0</span></p>
+        <button onclick="drinkWater()">I drank water (+1)</button>
+    </section>
+
+    <hr>
+
+    <section>
+        <h3>Blood Pressure Log</h3>
+        <input type="number" id="systolic" placeholder="Systolic">
+        <input type="number" id="diastolic" placeholder="Diastolic">
+        <button onclick="saveBP()">Save</button>
+        <p id="bp-result"></p>
+        <button onclick="clearHistory()">Clear History</button>
+    </section>
+
+    <section>
+        <h3>Data History</h3>
+        <table border="1" id="historyTable">
+            <tr>
+                <th>Time</th>
+                <th>Pressure (mmHg)</th>
+            </tr>
+        </table>
+    </section>
+
+    <script>
+        // Water Counter
+        let waterCount = 0;
+        function drinkWater() {
+            waterCount += 1;
+            document.getElementById("count").innerText = waterCount;
+        }
+
+        // Sound Player
+        function playAlertSound() {
+            let audio = new Audio('alarm.mp3');
+            audio.play();
+        }
+
+        // Load History
+        window.onload = function() {
+            let history = JSON.parse(localStorage.getItem('bpHistory')) || [];
+            let table = document.getElementById("historyTable");
+            history.forEach(item => {
+                let row = table.insertRow(1);
+                row.insertCell(0).innerHTML = item.time;
+                row.insertCell(1).innerHTML = item.bp;
+            });
+        };
+
+        // Clear History
+        function clearHistory() {
+            if (confirm("Are you sure you want to clear history?")) {
+                localStorage.removeItem('bpHistory');
+                location.reload();
+            }
+        }
+
+        // Save Blood Pressure
+        function saveBP() {
+            let sys = parseInt(document.getElementById("systolic").value);
+            let dia = parseInt(document.getElementById("diastolic").value);
+            let result = document.getElementById("bp-result");
+
+            if(sys && dia) {
+                let time = new Date().toLocaleTimeString();
+                let bp = sys + "/" + dia;
+
+                let table = document.getElementById("historyTable");
+                let row = table.insertRow(1);
+                row.insertCell(0).innerHTML = time;
+                row.insertCell(1).innerHTML = bp;
+
+                let history = JSON.parse(localStorage.getItem('bpHistory')) || [];
+                history.push({time: time, bp: bp});
+                localStorage.setItem('bpHistory', JSON.stringify(history));
+
+                let message = "Recorded BP: " + bp + " mmHg. ";
+                if(sys < 120 && dia < 80) {
+                    result.innerHTML = message + "<span style='color:green;'>Normal</span>";
+                } else if(sys >= 140 || dia >= 90) {
+                    result.innerHTML = message + "<span style='color:red;'>High - Consult a doctor.</span>";
+                } else {
+                    result.innerHTML = message + "<span style='color:orange;'>Slightly High.</span>";
+                }
+                
+                playAlertSound();
+            } else {
+                alert("Please enter both values!");
+            }
+        }
+    </script>
+</body>
+</html>
